@@ -1,10 +1,9 @@
 pipeline {
     agent any
     stages {
-        stage('Checkout Code') {
+        stage('Source Code Management') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/himanshitekade/maven-web-application.git'
+                git 'https://github.com/himanshitekade/maven-web-application.git'
             }
         }
         stage('Build with Maven') {
@@ -12,9 +11,17 @@ pipeline {
                 sh 'mvn clean package'
             }
         }
-        stage('Deploy to Tomcat') {
+        stage('Build Docker Image') {
             steps {
-                sh 'cp /var/lib/jenkins/workspace/Maven-Web-Project-Pipeline/target/maven-web-application.war /opt/apache-tomcat-9.0.109/webapps/'
+                sh 'docker build -t ht-maven-web-app .'
+            }
+        }
+        stage('Run Docker Container') {
+            steps {
+                sh '''
+                    docker rm -f ht-maven-web-container || true
+                    docker run -d --name ht-maven-web-container -p 8081:8080 ht-maven-web-app
+                '''
             }
         }
     }
